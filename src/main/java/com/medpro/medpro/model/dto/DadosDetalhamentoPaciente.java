@@ -3,6 +3,7 @@ package com.medpro.medpro.model.dto;
 import com.medpro.medpro.model.entity.Endereco;
 import com.medpro.medpro.model.entity.Paciente;
 
+/** DTO de saída para detalhar paciente sem expor diretamente a entidade JPA. */
 public record DadosDetalhamentoPaciente(
         Long id,
         String nome,

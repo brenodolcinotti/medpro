@@ -1,7 +1,7 @@
 package com.medpro.medpro.infra.security;
 
-import java.io.IOException;
-
+import com.medpro.medpro.repository.UsuarioRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,18 +15,29 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
+/** Configuração stateless: somente POST /login é público; as demais rotas exigem JWT. */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfigurations {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityFilter securityFilter)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   TokenService tokenService,
+                                                   UsuarioRepository usuarioRepository) throws Exception {
+        // O filtro é criado diretamente nesta cadeia para não ser registrado duas vezes
+        // pelo servlet container e pelo Spring Security.
+        SecurityFilter securityFilter = new SecurityFilter(tokenService, usuarioRepository);
+
         return http
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .logout(logout -> logout.disable())
+                .requestCache(cache -> cache.disable())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .anyRequest().authenticated())
@@ -52,12 +63,13 @@ public class SecurityConfigurations {
         return new BCryptPasswordEncoder();
     }
 
-    private static void escreverErro(HttpServletResponse response, int status, String mensagem) throws IOException {
+    private static void escreverErro(HttpServletResponse response, int status, String mensagem)
+            throws IOException {
         response.setStatus(status);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(
-        "{\"mensagem\":\"" + mensagem + "\"}"
-        );
+        response.setHeader("Cache-Control", "no-store");
+        // Mensagens controladas pela aplicação, sem dados fornecidos pelo cliente.
+        response.getWriter().write("{\"mensagem\":\"" + mensagem + "\"}");
     }
 }

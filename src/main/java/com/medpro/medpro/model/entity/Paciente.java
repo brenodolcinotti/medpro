@@ -1,7 +1,6 @@
 package com.medpro.medpro.model.entity;
 
 import com.medpro.medpro.model.dto.DadosCadastroPaciente;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -9,18 +8,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 /** Entidade JPA que representa um paciente cadastrado na clínica. */
 @Entity
 @Table(name = "pacientes")
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(of = "id")
 public class Paciente {
 
     @Id
@@ -30,24 +21,42 @@ public class Paciente {
     @Column(nullable = false, length = 100)
     private String nome;
 
-    @Column(nullable = false, length = 100, unique = true)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
     @Column(nullable = false, length = 20)
     private String telefone;
 
-    @Column(nullable = false, length = 11, unique = true)
+    @Column(nullable = false, unique = true, length = 11)
     private String cpf;
 
     @Embedded
     private Endereco endereco;
 
-    /** Constrói a entidade a partir do DTO recebido pelo controller. */
+    /** Construtor exigido pelo JPA. */
+    protected Paciente() {
+    }
+
+    /** Constrói a entidade a partir do DTO validado recebido pela API. */
     public Paciente(DadosCadastroPaciente dados) {
-        this.nome = dados.nome().trim();
-        this.email = dados.email().trim();
-        this.telefone = dados.telefone().trim();
-        this.cpf = dados.cpf().trim();
+        if (dados == null) {
+            throw new IllegalArgumentException("Os dados do paciente são obrigatórios.");
+        }
+        this.nome = normalizar(dados.nome());
+        this.email = normalizar(dados.email());
+        this.telefone = normalizar(dados.telefone());
+        this.cpf = normalizar(dados.cpf());
         this.endereco = new Endereco(dados.endereco());
     }
+
+    private static String normalizar(String valor) {
+        return valor == null ? null : valor.trim();
+    }
+
+    public Long getId() { return id; }
+    public String getNome() { return nome; }
+    public String getEmail() { return email; }
+    public String getTelefone() { return telefone; }
+    public String getCpf() { return cpf; }
+    public Endereco getEndereco() { return endereco; }
 }

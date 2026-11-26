@@ -1,29 +1,21 @@
 package com.medpro.medpro.model.entity;
 
-import java.util.Collection;
-import java.util.List;
-
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
+import java.util.List;
+
+/** Usuário usado pelo Spring Security para autenticação da API. */
 @Entity
 @Table(name = "usuarios")
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(of = "id")
 public class Usuario implements UserDetails {
 
     @Id
@@ -35,6 +27,17 @@ public class Usuario implements UserDetails {
 
     @Column(nullable = false, length = 255)
     private String senha;
+
+    /** Construtor exigido pelo JPA. */
+    protected Usuario() {
+    }
+
+    /** Construtor útil para testes e criação controlada de instâncias. */
+    public Usuario(Long id, String login, String senha) {
+        this.id = id;
+        this.login = login;
+        this.senha = senha;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -51,23 +54,19 @@ public class Usuario implements UserDetails {
         return login;
     }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+    public Long getId() { return id; }
+    public String getLogin() { return login; }
+    public String getSenha() { return senha; }
 
     @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
+    public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
+    public boolean isAccountNonLocked() { return true; }
 
     @Override
-    public boolean isEnabled() {
-        return true;
-    }
+    public boolean isCredentialsNonExpired() { return true; }
+
+    @Override
+    public boolean isEnabled() { return true; }
 }

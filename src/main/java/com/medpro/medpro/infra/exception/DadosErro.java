@@ -1,5 +1,5 @@
+
 package com.medpro.medpro.infra.exception;
 
-public class DadosErro {
-    
+public record DadosErro(String mensagem) {
 }

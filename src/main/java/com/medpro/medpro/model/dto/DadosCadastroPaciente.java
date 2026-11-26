@@ -6,12 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
-/**
- * DTO utilizado para receber os dados de cadastro de um paciente pela API.
- * O endereço é validado em cascata por meio de @Valid.
- */
+/** DTO de entrada para o cadastro de pacientes. */
 public record DadosCadastroPaciente(
-
         @NotBlank(message = "O nome é obrigatório.")
         String nome,
 
@@ -28,5 +24,4 @@ public record DadosCadastroPaciente(
 
         @NotNull(message = "O endereço é obrigatório.")
         @Valid DadosEndereco endereco) {
-
 }

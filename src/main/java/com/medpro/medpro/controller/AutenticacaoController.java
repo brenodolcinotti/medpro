@@ -1,3 +1,4 @@
+
 package com.medpro.medpro.controller;
 
 import org.springframework.http.ResponseEntity;
@@ -15,7 +16,9 @@ import com.medpro.medpro.model.entity.Usuario;
 
 import jakarta.validation.Valid;
 
-/** Endpoint público de autenticação. Os demais endpoints exigem JWT. */
+/**
+ * Endpoint público que autentica login/senha e devolve um token JWT.
+ */
 @RestController
 @RequestMapping("/login")
 public class AutenticacaoController {
@@ -23,17 +26,25 @@ public class AutenticacaoController {
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
 
-    public AutenticacaoController(AuthenticationManager authenticationManager, TokenService tokenService) {
+    public AutenticacaoController(
+            AuthenticationManager authenticationManager,
+            TokenService tokenService) {
         this.authenticationManager = authenticationManager;
         this.tokenService = tokenService;
     }
 
     @PostMapping
-    public ResponseEntity<DadosTokenJWT> efetuarLogin(@RequestBody @Valid DadosAutenticacao dados) {
-        var credenciais = new UsernamePasswordAuthenticationToken(dados.login(), dados.senha());
+    public ResponseEntity<DadosTokenJWT> efetuarLogin(
+            @RequestBody @Valid DadosAutenticacao dados) {
+
+        var credenciais = new UsernamePasswordAuthenticationToken(
+                dados.login(),
+                dados.senha());
+
         var autenticacao = authenticationManager.authenticate(credenciais);
         var usuario = (Usuario) autenticacao.getPrincipal();
         var token = tokenService.gerarToken(usuario);
+
         return ResponseEntity.ok(new DadosTokenJWT(token));
     }
 }

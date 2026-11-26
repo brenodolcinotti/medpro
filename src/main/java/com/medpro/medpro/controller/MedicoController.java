@@ -22,6 +22,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 
+/** Endpoints REST de cadastro, listagem e detalhamento de médicos. */
 @RestController
 @RequestMapping("/medicos")
 public class MedicoController {
@@ -38,28 +39,35 @@ public class MedicoController {
             @RequestBody @Valid DadosCadastroMedico dados,
             UriComponentsBuilder uriBuilder) {
 
-        Medico medico = new Medico(dados);
-        medicoRepository.save(medico);
+        Medico medicoSalvo = medicoRepository.save(new Medico(dados));
 
-        var uri = uriBuilder.path("/medicos/{id}")
-                .buildAndExpand(medico.getId())
+        var uri = uriBuilder
+                .path("/medicos/{id}")
+                .buildAndExpand(medicoSalvo.getId())
                 .toUri();
 
-        return ResponseEntity.created(uri).body(new DadosDetalhamentoMedico(medico));
+        return ResponseEntity
+                .created(uri)
+                .body(new DadosDetalhamentoMedico(medicoSalvo));
     }
 
     @GetMapping
     public ResponseEntity<Page<DadosListagemMedico>> listar(
             @PageableDefault(size = 10, sort = "nome") Pageable paginacao) {
 
-        var pagina = medicoRepository.findAll(paginacao).map(DadosListagemMedico::new);
+        var pagina = medicoRepository.findAll(paginacao)
+                .map(DadosListagemMedico::new);
+
         return ResponseEntity.ok(pagina);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DadosDetalhamentoMedico> detalhar(@PathVariable Long id) {
+    public ResponseEntity<DadosDetalhamentoMedico> detalhar(
+            @PathVariable Long id) {
+
         var medico = medicoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Médico não encontrado."));
+
         return ResponseEntity.ok(new DadosDetalhamentoMedico(medico));
     }
 }

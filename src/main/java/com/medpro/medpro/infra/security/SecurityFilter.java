@@ -1,22 +1,19 @@
 package com.medpro.medpro.infra.security;
 
-import java.io.IOException;
-
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.medpro.medpro.model.entity.Usuario;
 import com.medpro.medpro.repository.UsuarioRepository;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.filter.OncePerRequestFilter;
 
-@Component
+import java.io.IOException;
+
+/** Lê e valida Authorization: Bearer <token> nas rotas protegidas. */
 public class SecurityFilter extends OncePerRequestFilter {
 
     private static final String MENSAGEM_TOKEN_INVALIDO = "Token JWT inválido ou expirado!";
@@ -29,39 +26,56 @@ public class SecurityFilter extends OncePerRequestFilter {
         this.usuarioRepository = usuarioRepository;
     }
 
+    /** O login é público e não deve ser bloqueado por um Bearer antigo enviado pelo cliente. */
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return "/login".equals(request.getServletPath());
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String tokenJWT = recuperarToken(request);
-        if (tokenJWT != null) {
-            final String subject;
-            try {
-                subject = tokenService.getSubject(tokenJWT);
-            } catch (JWTVerificationException exception) {
-                SecurityContextHolder.clearContext();
-                responderNaoAutorizado(response, MENSAGEM_TOKEN_INVALIDO);
-                return;
-            }
-
-            Usuario usuario = usuarioRepository.findByLogin(subject).orElse(null);
-            if (usuario == null) {
-                SecurityContextHolder.clearContext();
-                responderNaoAutorizado(response, MENSAGEM_TOKEN_INVALIDO);
-                return;
-            }
-
-            var autenticacao = new UsernamePasswordAuthenticationToken(
-                    usuario, null, usuario.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(autenticacao);
+        if (tokenJWT == null) {
+            filterChain.doFilter(request, response);
+            return;
         }
+
+        final String login;
+        try {
+            login = tokenService.getSubject(tokenJWT);
+        } catch (JWTVerificationException | IllegalArgumentException exception) {
+            SecurityContextHolder.clearContext();
+            responderNaoAutorizado(response);
+            return;
+        }
+
+        if (login == null || login.isBlank()) {
+            SecurityContextHolder.clearContext();
+            responderNaoAutorizado(response);
+            return;
+        }
+
+        Usuario usuario = usuarioRepository.findByLogin(login).orElse(null);
+        if (usuario == null || !usuario.isEnabled()) {
+            SecurityContextHolder.clearContext();
+            responderNaoAutorizado(response);
+            return;
+        }
+
+        var autenticacao = new UsernamePasswordAuthenticationToken(
+                usuario, null, usuario.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(autenticacao);
 
         filterChain.doFilter(request, response);
     }
 
     private String recuperarToken(HttpServletRequest request) {
         String authorizationHeader = request.getHeader("Authorization");
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+        if (authorizationHeader == null
+                || !authorizationHeader.regionMatches(true, 0, "Bearer ", 0, 7)) {
             return null;
         }
 
@@ -69,12 +83,12 @@ public class SecurityFilter extends OncePerRequestFilter {
         return token.isEmpty() ? null : token;
     }
 
-    private void responderNaoAutorizado(HttpServletResponse response, String mensagem) throws IOException {
+    private void responderNaoAutorizado(HttpServletResponse response) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(
-        "{\"mensagem\":\"" + mensagem + "\"}"
-        );
+        response.setHeader("Cache-Control", "no-store");
+        // Mensagem fixa da aplicação; não contém conteúdo fornecido pelo cliente.
+        response.getWriter().write("{\"mensagem\":\"" + MENSAGEM_TOKEN_INVALIDO + "\"}");
     }
 }

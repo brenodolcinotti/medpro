@@ -4,6 +4,7 @@ import com.medpro.medpro.enums.Especialidade;
 import com.medpro.medpro.model.entity.Endereco;
 import com.medpro.medpro.model.entity.Medico;
 
+/** DTO de saída para detalhar médico sem expor diretamente a entidade JPA. */
 public record DadosDetalhamentoMedico(
         Long id,
         String nome,

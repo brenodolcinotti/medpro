@@ -3,6 +3,7 @@ package com.medpro.medpro.model.dto;
 import com.medpro.medpro.enums.Especialidade;
 import com.medpro.medpro.model.entity.Medico;
 
+/** DTO resumido usado na listagem paginada de médicos. */
 public record DadosListagemMedico(
         Long id,
         String nome,

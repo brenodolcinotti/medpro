@@ -2,6 +2,7 @@ package com.medpro.medpro.model.dto;
 
 import com.medpro.medpro.model.entity.Paciente;
 
+/** DTO resumido usado na listagem paginada de pacientes. */
 public record DadosListagemPaciente(
         Long id,
         String nome,

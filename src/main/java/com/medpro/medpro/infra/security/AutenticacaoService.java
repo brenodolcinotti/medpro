@@ -1,12 +1,12 @@
 package com.medpro.medpro.infra.security;
 
+import com.medpro.medpro.repository.UsuarioRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.medpro.medpro.repository.UsuarioRepository;
-
+/** Busca usuários pelo login utilizado na autenticação. */
 @Service
 public class AutenticacaoService implements UserDetailsService {
 
